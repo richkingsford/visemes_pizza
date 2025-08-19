@@ -6,6 +6,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let selectedCharacter = null;
     // Store nudge offsets instead of absolute positions
     let visemeOffsets = JSON.parse(localStorage.getItem('visemeOffsets')) || {};
+    // Store scaling factors for each character
+    let visemeScales = JSON.parse(localStorage.getItem('visemeScales')) || {};
 
     // Hardcoded character and viseme file paths. In a real application,
     // this list would likely be fetched from a server. For this static app,
@@ -55,9 +57,10 @@ document.addEventListener('DOMContentLoaded', () => {
         visemeImg.src = 'Visemes/b-m-p-neutral.png'; // Default to neutral
         visemeImg.alt = 'Viseme';
 
-        // Get saved offsets or default to 0
+        // Get saved offsets and scale or default values
         const offset = visemeOffsets[characterId] || { x: 0, y: 0 };
-        visemeImg.style.transform = `translate(-50%, -50%) translate(${offset.x}px, ${offset.y}px)`;
+        const scale = visemeScales[characterId] || 1.0;
+        visemeImg.style.transform = `translate(-50%, -50%) translate(${offset.x}px, ${offset.y}px) scale(${scale})`;
 
 
         characterDiv.appendChild(characterImg);
@@ -82,9 +85,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const characterId = selectedCharacter.dataset.characterId;
         const viseme = selectedCharacter.querySelector('.viseme');
 
-        // Get current offsets for the selected character
+        // Get current offsets and scale for the selected character
         const currentOffset = visemeOffsets[characterId] || { x: 0, y: 0 };
+        const currentScale = visemeScales[characterId] || 1.0;
         let { x, y } = currentOffset;
+        let scale = currentScale;
 
         switch (event.key) {
             case 'ArrowUp':
@@ -99,16 +104,24 @@ document.addEventListener('DOMContentLoaded', () => {
             case 'ArrowRight':
                 x += 1;
                 break;
+            case 'PageUp':
+                scale = Math.min(scale + 0.1, 3.0); // Max scale of 3x
+                break;
+            case 'PageDown':
+                scale = Math.max(scale - 0.1, 0.1); // Min scale of 0.1x
+                break;
             default:
-                return; // Don't save if no arrow key was pressed
+                return; // Don't save if no valid key was pressed
         }
 
         // Apply the new transform
-        viseme.style.transform = `translate(-50%, -50%) translate(${x}px, ${y}px)`;
+        viseme.style.transform = `translate(-50%, -50%) translate(${x}px, ${y}px) scale(${scale})`;
 
-        // Save the new offsets
+        // Save the new offsets and scale
         visemeOffsets[characterId] = { x, y };
+        visemeScales[characterId] = scale;
         localStorage.setItem('visemeOffsets', JSON.stringify(visemeOffsets));
+        localStorage.setItem('visemeScales', JSON.stringify(visemeScales));
     });
 
     function getVisemeForChar(char, nextChar) {
