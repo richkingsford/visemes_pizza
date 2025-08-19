@@ -122,10 +122,12 @@ document.addEventListener('DOMContentLoaded', () => {
             case 'ArrowRight':
                 x += 1;
                 break;
-            case 'PageUp':
+            case '+':
+            case '=': // Handle both + and = key (since + requires shift)
                 scale = Math.min(scale + 0.1, 3.0); // Max scale of 3x
                 break;
-            case 'PageDown':
+            case '-':
+            case '_': // Handle both - and _ key (since _ requires shift)
                 scale = Math.max(scale - 0.1, 0.1); // Min scale of 0.1x
                 break;
             default:
