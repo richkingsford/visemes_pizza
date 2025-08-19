@@ -1,9 +1,11 @@
 document.addEventListener('DOMContentLoaded', () => {
     const charactersContainer = document.getElementById('characters-container');
-    const sentence = "the quick brown fox jumps over the lazy dog";
+    const sentenceInput = document.getElementById('sentence-input');
+    let sentence = sentenceInput.value;
     let sentenceIndex = 0;
     let selectedCharacter = null;
-    let visemePositions = JSON.parse(localStorage.getItem('visemePositions')) || {};
+    // Store nudge offsets instead of absolute positions
+    let visemeOffsets = JSON.parse(localStorage.getItem('visemeOffsets')) || {};
 
     // Hardcoded character and viseme file paths. In a real application,
     // this list would likely be fetched from a server. For this static app,
@@ -33,6 +35,11 @@ document.addEventListener('DOMContentLoaded', () => {
         'u': 'Visemes/u.png'
     };
 
+    sentenceInput.addEventListener('input', (event) => {
+        sentence = event.target.value.toLowerCase();
+        sentenceIndex = 0;
+    });
+
     characterFiles.forEach((characterFile, index) => {
         const characterId = index;
         const characterDiv = document.createElement('div');
@@ -48,9 +55,10 @@ document.addEventListener('DOMContentLoaded', () => {
         visemeImg.src = 'Visemes/b-m-p-neutral.png'; // Default to neutral
         visemeImg.alt = 'Viseme';
 
-        const position = visemePositions[characterId] || { top: '50%', left: '50%' };
-        visemeImg.style.top = position.top;
-        visemeImg.style.left = position.left;
+        // Get saved offsets or default to 0
+        const offset = visemeOffsets[characterId] || { x: 0, y: 0 };
+        visemeImg.style.transform = `translate(-50%, -50%) translate(${offset.x}px, ${offset.y}px)`;
+
 
         characterDiv.appendChild(characterImg);
         characterDiv.appendChild(visemeImg);
@@ -71,31 +79,36 @@ document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('keydown', (event) => {
         if (!selectedCharacter) return;
 
+        const characterId = selectedCharacter.dataset.characterId;
         const viseme = selectedCharacter.querySelector('.viseme');
-        let top = parseFloat(viseme.style.top);
-        let left = parseFloat(viseme.style.left);
+
+        // Get current offsets for the selected character
+        const currentOffset = visemeOffsets[characterId] || { x: 0, y: 0 };
+        let { x, y } = currentOffset;
 
         switch (event.key) {
             case 'ArrowUp':
-                top -= 1;
+                y -= 1;
                 break;
             case 'ArrowDown':
-                top += 1;
+                y += 1;
                 break;
             case 'ArrowLeft':
-                left -= 1;
+                x -= 1;
                 break;
             case 'ArrowRight':
-                left += 1;
+                x += 1;
                 break;
+            default:
+                return; // Don't save if no arrow key was pressed
         }
 
-        viseme.style.top = `${top}%`;
-        viseme.style.left = `${left}%`;
+        // Apply the new transform
+        viseme.style.transform = `translate(-50%, -50%) translate(${x}px, ${y}px)`;
 
-        const characterId = selectedCharacter.dataset.characterId;
-        visemePositions[characterId] = { top: viseme.style.top, left: viseme.style.left };
-        localStorage.setItem('visemePositions', JSON.stringify(visemePositions));
+        // Save the new offsets
+        visemeOffsets[characterId] = { x, y };
+        localStorage.setItem('visemeOffsets', JSON.stringify(visemeOffsets));
     });
 
     function getVisemeForChar(char, nextChar) {
@@ -110,6 +123,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function animateVisemes() {
+        if (sentence.length === 0) {
+            const visemeImages = document.querySelectorAll('.viseme');
+            visemeImages.forEach(visemeImg => {
+                visemeImg.src = 'Visemes/b-m-p-neutral.png';
+            });
+            return;
+        }
         if (sentenceIndex >= sentence.length) {
             sentenceIndex = 0; // Loop back to the beginning
         }
@@ -127,5 +147,5 @@ document.addEventListener('DOMContentLoaded', () => {
         sentenceIndex += consumed;
     }
 
-    setInterval(animateVisemes, 150); // Adjust timing as needed
+    setInterval(animateVisemes, 150);
 });
