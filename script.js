@@ -42,6 +42,24 @@ document.addEventListener('DOMContentLoaded', () => {
         sentenceIndex = 0;
     });
 
+    // Add save button functionality
+    const saveButton = document.getElementById('save-button');
+    saveButton.addEventListener('click', () => {
+        // Save current settings to localStorage
+        localStorage.setItem('visemeOffsets', JSON.stringify(visemeOffsets));
+        localStorage.setItem('visemeScales', JSON.stringify(visemeScales));
+        
+        // Provide visual feedback
+        const originalText = saveButton.textContent;
+        saveButton.textContent = 'Saved!';
+        saveButton.style.backgroundColor = '#28a745';
+        
+        setTimeout(() => {
+            saveButton.textContent = originalText;
+            saveButton.style.backgroundColor = '#007bff';
+        }, 1000);
+    });
+
     characterFiles.forEach((characterFile, index) => {
         const characterId = index;
         const characterDiv = document.createElement('div');
